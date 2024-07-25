@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simpleapp
+  labels:
+    app: simpleapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: simpleapp
+  template:
+    metadata:
+      labels:
+        app: simpleapp
+    spec:
+      containers:
+      - name: simpleapp
+        image: felipealves26/simpleapp:v1
+        ports:
+        - containerPort: 8008
+        envFrom:
+        - configMapRef:
+            name: simpleapp-cm
+      - name: fluent-bit
+        image: fluent/fluent-bit:latest
+        env:
+        - name: FLUENT_ELASTICSEARCH_HOST
+          value: "elasticsearch-master"
+        - name: FLUENT_ELASTICSEARCH_PORT
+          value: "9200"
+        - name: FLUENT_ELASTICSEARCH_INDEX
+          value: "fluent-bit"
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers            
